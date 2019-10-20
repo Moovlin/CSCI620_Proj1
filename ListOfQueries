@@ -1,10 +1,10 @@
-1.List the names of alive actors whose name starts with a given keyword (such as “Phi”) and did not participate in any movie in a given year (such as 2014).  
-2.List the names of alive producers who have produced more than a given number (such as 50) of talk shows in a given year (such as 2017) and whose name contains a given keyword (such as “Gill”). 
+Aj - 1.List the names of alive actors whose name starts with a given keyword (such as “Phi”) and did not participate in any movie in a given year (such as 2014).  
+Aj - 2.List the names of alive producers who have produced more than a given number (such as 50) of talk shows in a given year (such as 2017) and whose name contains a given keyword (such as “Gill”). 
 3.List the average runtime for movies whose original title contain a given keyword such as (“star”) and were written by somebody who is still alive. 
 4.List the names of alive producers with the greatest number of long-run movies produced (runtime greater than 120 min).  
 5.List the unique name pairs of actors who have acted together in more than a given number (such as 2) movies and sort them by average movie rating (of those they acted together). 
-6.List the tv series with x number of episodes and which has a rating above 4 for the last 5 years.  
-7.List all the movies with actor (actor name ) and which are in language (English, Spanish etc).  
-8.List all the actors and producers who died before thier movie was released. 
+Aj - 6.List the tv series with x number of episodes and which has a rating above 4 for the last 5 years.  
+Aj - 7.List all the movies with actor (actor name ) and which are in language (English, Spanish etc).  
+Aj - 8.List all the actors and producers who died before thier movie was released. 
 9.List all the movies where the actor and director both had the same birth year contributed to the same movie. 
 10.List all the users who gave rating over 8 (or any rating value) for the last x(number ) of years. 
