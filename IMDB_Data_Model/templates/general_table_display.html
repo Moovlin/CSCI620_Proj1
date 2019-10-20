@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+   <body>
+      <table border = 1>
+         {% for row in result %}
+            <tr>
+                {% for cell in row %}
+                    <th>
+                        {{ cell }}
+                    </th>
+                {% endfor %}
+            </tr>
+         {% endfor %}
+      </table>
+   </body>
+</html>
