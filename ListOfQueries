@@ -5,6 +5,6 @@ Aj - 2.List the names of alive producers who have produced more than a given num
 5.List the unique name pairs of actors who have acted together in more than a given number (such as 2) movies and sort them by average movie rating (of those they acted together). 
 Aj - 6.List the tv series with x number of episodes and which has a rating above 4 for the last 5 years.  
 Aj - 7.List all the movies with actor (actor name ) and which are in language (English, Spanish etc).  
-Aj - 8.List all the actors and producers who died before thier movie was released. 
+Aj - 8.List all the actors and producers who died before their movie was released. 
 9.List all the movies where the actor and director both had the same birth year contributed to the same movie. 
 10.List all the users who gave rating over 8 (or any rating value) for the last x(number ) of years. 
