@@ -18,7 +18,22 @@ def home_page():
 def query_1():
     return render_template('Query_1.html')
 
-@app.route('/result',methods = ['POST', 'GET'])
+
+@app.route("/query1")
+def query_2():
+    return render_template('Query_1.html')
+
+
+@app.route("/query2")
+def query_3():
+    return render_template('Query_2.html')
+
+@app.route("/query3")
+def query_3():
+    return render_template('Query_3.html')
+
+
+@app.route('/result', methods=['POST', 'GET'])
 def result():
     print(request.form['StartsWith'])
     print(request.form['year'])
