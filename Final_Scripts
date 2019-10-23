@@ -1,0 +1,38 @@
+Aj - 8.List all the actors and producers who died before their movie was released. 
+Select m.release_year, g.title, p.act_name, per.death_year from movie m
+	LEFT JOIN general_movies g on (g.tconst = m.movie_tconst)
+    JOIN participates p on (g.tconst = p.movie_tconst)
+    JOIN persons per on (p.act_name = per.primary_name)
+    where m.release_year > per.death_year;
+
+
+
+Aj - 7.List all the movies with actor (actor name ) and which are in language (English, Spanish etc).  
+Select g.title, p.act_name, loc.lang  from movie m
+	LEFT JOIN general_movies g on (g.tconst = m.movie_tconst)
+	JOIN participates p on (g.tconst = p.movie_tconst)
+    JOIN localize loc on (loc.tconst = m.movie_tconst)
+    where loc.lang = 'en' and p.act_name = 'Agnete von Prangen';
+
+
+#Aj - 5.List the unique name pairs of actors who have acted together in more than a given number (such as 2) movies and sort them by average movie rating (of those they acted together).
+Select actlist
+FROM (Select actList, Count(actList) as countOfMovies
+	FROM (Select  r.rating as rating, GROUP_CONCAT(p.act_name SEPARATOR ',') as actList, g.title as title from movie m
+		JOIN general_movies g on (g.tconst = m.movie_tconst)
+		JOIN participates p on (g.tconst = p.movie_tconst)
+		JOIN persons per on (p.act_name = per.primary_name)
+        JOIN previous_rating r on (g.tconst = r.tconst)
+		group by g.title, r.rating
+        order by r.rating)  as listOfActors 
+		GROUP by actlist) as listandCount 
+        Where countOfMovies>1;
+
+
+Aj - 6.List the tv series with x number of episodes and which has a rating above 4 and runtime of 90.  
+
+ Select g.title, g.runtime from tvEpisode tve
+     LEFT JOIN rating r ON (tve.episode_tconst = r.tconst AND r.rating>4) 
+     LEFT JOIN general_movies g on (g.tconst = tve.episode_tconst)
+     where tve.episode_number>6
+     AND g.runtime < 90; 
