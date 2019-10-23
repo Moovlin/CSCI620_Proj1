@@ -29,6 +29,22 @@ on b.`help_topic_id` < (length(a.profession) - length(replace(a.profession,',','
 order by a.`primary_name`,a.`birth_year`;
 
 -- acts
+
+CREATE TABLE `acts1` (
+  `tconst` varchar(256) NOT NULL,
+  `nconst` varchar(256) NOT NULL,
+  `characters` longtext,
+  PRIMARY KEY (`tconst`,`nconst`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `act2` (
+  `tconst` varchar(30) NOT NULL,
+  `name` varchar(256) NOT NULL,
+  `birthYear` int(11) NOT NULL,
+  `characters` longtext,
+  PRIMARY KEY (`tconst`,`name`,`birthYear`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 INSERT ignore INTO acts1
 SELECT tconst, nconst, characters
 FROM `title_principals1`;
