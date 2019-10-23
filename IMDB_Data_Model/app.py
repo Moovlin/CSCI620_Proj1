@@ -4,8 +4,8 @@ from flaskext.mysql import MySQL
 app = Flask(__name__)
 mysql = MySQL()
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'Root@123' # replace **** with your local mysql password.
-app.config['MYSQL_DATABASE_DB'] = 'IMDB_Local'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'password' # replace **** with your local mysql password.
+app.config['MYSQL_DATABASE_DB'] = 'group3_movies'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
 
@@ -56,9 +56,10 @@ def query_8():
     return render_template('Query_8.html')
 
 
-@app.route("/query9")
+@app.route("/query9", methods=['POST', 'GET'])
 def query_9():
-    return render_template('Query_9.html')
+    if request.method == "GET":
+        return render_template('Query_9.html')
 
 
 @app.route("/query10")
@@ -66,9 +67,23 @@ def query_10():
     return render_template('Query_10.html')
 
 
-@app.route("/query11")
+@app.route("/query11", methods=['POST', 'GET'])
 def query_11():
-    return render_template('Query_11.html')
+    if request.method == 'GET':
+        return render_template('Query_11.html')
+    else:
+        length = request.form["length"]
+        length = int(length) * 60
+        queryString = "select title, runtime, " \
+                      "count(tvSeries.series_tconst) * runtime from group3_movies.general_movies as gMovies, " \
+                      "group3_movies.tvSeries as tvSeries, group3_movies.has as has " \
+                      "where gMovies.tconst = tvSeries.series_tconst and has.series_tconst = tvSeries.series_tconst " \
+                      "group by (tvSeries.series_tconst) having count(has.episode_tconst) * runtime < {};"
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute(queryString.format(length))
+        records = cursor.fetchall()
+        return render_template("general_table_display.html", result=records)
 
 
 @app.route('/result', methods=['POST', 'GET'])
