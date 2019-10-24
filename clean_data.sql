@@ -53,12 +53,11 @@ CREATE TABLE `title_principals1` (
 
 CREATE TABLE `title_principals2` (
   `tconst` varchar(80) NOT NULL,
-  `ordering` varchar(45) NOT NULL,
   `nconst` varchar(45) NOT NULL,
-  `category` varchar(80) DEFAULT NULL,
-  `job` longtext,
+  `category` varchar(128) DEFAULT NULL,
+  `job` varchar(128) DEFAULT NULL,
   `characters` longtext,
-  PRIMARY KEY (`tconst`,`ordering`,`nconst`)
+  PRIMARY KEY (`tconst`,`nconst`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT IGNORE INTO `title_akas1`
@@ -93,11 +92,11 @@ INSERT IGNORE INTO `title_principals1`
 SELECT *
 FROM `title_principals` old
 WHERE old.category = 'actress' AND old.characters IS NOT NULL;
-
+-- 1209s
 INSERT IGNORE INTO `title_principals2`
-SELECT *
+SELECT old.tconst,old.nconst,old.category,old.job
 FROM `title_principals` old
-WHERE old.category IS NOT NULL;
+WHERE old.category IS NOT NULL and not old.category = 'actress' and not old.category = 'actor';
 
 INSERT IGNORE INTO `name_basics1`
 SELECT * 

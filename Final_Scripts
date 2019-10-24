@@ -1,3 +1,30 @@
+Aj - 1.List the names of alive actors whose name starts with a given keyword (such as “Phi”) and did not participate in any movie in a given year (such as 2014). 
+
+SELECT per.primary-name
+FROM person per 
+JOIN
+Surrogate sur
+On per.primary-name = sur.primary-name AND per.birth-year = sur.birth-year
+WHERE per.death-year is NULL 
+AND per.primary-name LIKE 'Phi%'
+AND sur.nconst NOT IN (
+SELECT nconst
+FROM movie mov
+JOIN acts act
+ON mov.tconst = act.movie_tconst
+WHERE mov.release-year = 2014)
+AND sur.nconst NOT IN (
+SELECT nconst
+FROM participates par
+JOIN
+Movie mov 
+ON mov.tconst = par.tconst
+WHERE mov.release-year = 2014
+);
+
+Aj - 2.Aj - 2.List the names of alive producers who have produced more than a given number (such as 50) of talk shows in a given year (such as 2017) and whose name contains a given keyword (such as “Gill”). 
+
+
 Aj - 8.List all the actors and producers who died before their movie was released. 
 Select m.release_year, g.title, p.act_name, per.death_year from movie m
 	LEFT JOIN general_movies g on (g.tconst = m.movie_tconst)
