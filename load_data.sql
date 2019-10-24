@@ -107,13 +107,3 @@ set tconst=nullif(@col1,''),
 
 LOAD DATA INFILE '/var/lib/mysql-files/ratings.tsv' INTO TABLE title_ratings
 FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n' IGNORE 1 LINES;
-
--- show variables like '%timeout%';
--- show variables like 'max_allowed_packet';
--- set global wait_timeout=2880000;
--- set global net_read_timeout=2880000;
--- set global interactive_timeout = 2880000;
--- set global connect_timeout=2880000;
--- set global delayed_insert_timeout=2880000;
--- set global max_allowed_packet = 2*1024*1024;
--- set global mysqlx_write_timeout = 2880000;
