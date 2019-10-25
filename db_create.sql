@@ -7,12 +7,6 @@ passwd varchar(256),
 age int,
 lang varchar(3)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- create table general_movies(
--- tconst varchar(30) primary key,
--- title varchar(512),
--- isAdult bool,
--- type varchar(32));
-
 CREATE TABLE `general_movies` (
   `tconst` varchar(30) NOT NULL,
   `title` varchar(512) DEFAULT NULL,
@@ -82,13 +76,6 @@ primary key (series_tconst, episode_tconst),
 foreign key (episode_tconst) references general_movies(tconst),
 foreign key (series_tconst) references general_movies(tconst)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- create table movie(
--- movie_tconst varchar(30),
--- release_year int,
--- runtime int,
--- primary key (movie_tconst),
--- foreign key (movie_tconst) references general_movies(tconst));
-
 CREATE TABLE `movie` (
   `movie_tconst` varchar(30) NOT NULL,
   `release_year` int(11) DEFAULT NULL,
@@ -141,9 +128,9 @@ foreign key (movie_tconst) references general_movies(tconst)) ENGINE=InnoDB DEFA
 
 create table hosts(
 news_tconst varchar(30),
-host_name varchar(256),
-birth_year int,
-role varchar(30),
-primary key (news_tconst, host_name, birth_year),
-foreign key (news_tconst) references general_movies(tconst),
-foreign key (host_name, birth_year) references persons(primary_name, birth_year)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+host_nconst varchar(256),
+role varchar(512),
+primary key (news_tconst, host_nconst, role),
+foreign key (news_tconst) references general_movies(tconst)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+Error Code: 1822. Failed to add the foreign key constraint. Missing index for constraint 'hosts_ibfk_2' in the referenced table 'surrogate_person'
