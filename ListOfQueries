@@ -1,6 +1,6 @@
 Aj - 1.List the names of alive actors whose name starts with a given keyword (such as “Phi”) and did not participate in any movie in a given year (such as 2014).  
 Aj - 2.List the names of alive producers who have produced more than a given number (such as 50) of talk shows in a given year (such as 2017) and whose name contains a given keyword (such as “Gill”). 
-Ri - 3.List the average runtime for movies whose original title contain a given keyword such as (“star”) and were written by somebody who is still alive.
+Aj - 3.List the average runtime for movies whose original title contain a given keyword such as (“star”) and were written by somebody who is still alive.
 Ri - 4.List the names of alive producers with the greatest number of long-run movies produced (runtime greater than 120 min).
 Aj - 5.List the unique name pairs of actors who have acted together in more than a given number (such as 2) movies and sort them by average movie rating (of those they acted together).
 Aj - 6.List the tv series with x number of episodes and which has a rating above 4 for the last 5 years.  

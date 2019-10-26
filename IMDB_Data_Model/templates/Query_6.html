@@ -1,9 +1,13 @@
 <html>
    <body>
-      <form action = "http://localhost:5000/result" method = "POST">
-         <p>Number of episodes <input type = "number" name = "numberOfEpisodes" /></p>
-         <p>Year <input type = "text" name = "year" /></p>
-         <p><input type = "submit" value = "submit" /></p>
-      </form>
+        <form action="/">
+            <button type="submit">Home</button><br /><br />
+        </form>
+        <form action = "http://localhost:5000/query6" method = "POST">
+             <p>Number of episodes <input type = "number" name = "numberOfEpisodes" /></p>
+            <p>Minimum Rating<input type = "text" name = "mini_rating" /></p>
+            <p>Running time<input type = "text" name = "running_time" /></p>
+            <p><input type = "submit" value = "submit" /></p>
+        </form>
    </body>
 </html>
