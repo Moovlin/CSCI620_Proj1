@@ -126,23 +126,16 @@ def query_5():
     else:
         print("In query5")
         Number_Movies = request.form["Number_Movies"]
-        queryString = "Select actlist " \
-                      "FROM (Select actList, Count(actList) as countOfMovies " \
-                      "FROM (Select  r.rating as rating, GROUP_CONCAT(p.act_name SEPARATOR ',') as actList, g.title as title " \
-                      "from movie m " \
-                      "JOIN general_movies g on (g.tconst = m.movie_tconst) " \
-                      "JOIN participates p on (g.tconst = p.movie_tconst) " \
-                      "JOIN persons per on (p.act_name = per.primary_name) " \
-                      "JOIN previous_rating r on (g.tconst = r.tconst) " \
-                      "group by g.title, r.rating " \
-                      "order by r.rating) as listOfActors " \
-                      "GROUP by actlist) as listandCount " \
-                      "Where countOfMovies > {};"
+        queryString = "select a1, a2 " \
+                      "from act_act act " \
+                      "group by act.a1, act.a2 " \
+                      "having count(*) > "+Number_Movies+";"
+
         conn = mysql.connect()
         cursor = conn.cursor()
         cursor.execute(queryString.format(Number_Movies))
         records = cursor.fetchall()
-        headers = ["Actor Name pairs"]
+        headers = ["Actor Name 1", "Actor Name 2"]
         return render_template("general_table_display.html", result=records, header=headers)
 
 
@@ -155,17 +148,18 @@ def query_6():
         number_episodes = request.form["numberOfEpisodes"]
         mini_rating = request.form["mini_rating"]
         running_time = request.form["running_time"]
-        queryString = "Select g.title " \
-                      "from tvEpisode tve " \
-                      "LEFT JOIN rating r " \
-                      "ON (tve.episode_tconst = r.tconst AND r.rating> {}) " \
-                      "LEFT JOIN general_movies g " \
-                      "ON (g.tconst = tve.episode_tconst) " \
-                      "where tve.episode_number> {} " \
-                      "AND g.runtime < {};"
+        queryString = "select gen.title " \
+                      "from has h, tvEpisode epi, general_movies gen " \
+                      "where h.episode_tconst = epi.episode_tconst and gen.tconst = h.series_tconst and gen.runtime = {} " \
+                      "and exists (select * " \
+                      "from previous_rating previous " \
+                      "where h.series_tconst = previous.tconst and rating > {}) " \
+                      "group by h.series_tconst, gen.title " \
+                      "having count(*) > {};"
+        print(queryString.format(running_time, mini_rating, number_episodes))
         conn = mysql.connect()
         cursor = conn.cursor()
-        cursor.execute(queryString.format(mini_rating, number_episodes, running_time))
+        cursor.execute(queryString.format(running_time, mini_rating, number_episodes))
         records = cursor.fetchall()
         headers = ["Title"]
         return render_template("general_table_display.html", result=records, header=headers)
@@ -230,20 +224,11 @@ def query_9():
     if request.method == 'GET':
         return render_template('Query_8.html')
     else:
-        queryString = "SELECT mov.title FROM general_movies mov, participates par, surrogate_person sur1, persons per1 "\
-                      "WHERE mov.type='movie' " \
-                      "AND par.category = 'director' " \
-                      "AND mov.tconst = par.tconst " \
-                      "AND par.nconst = sur1.nconst " \
-                      "AND per1.primary_name = sur1.primary_name " \
-                      "AND per1.birth_year = sur1.birth_year " \
-                      "AND per1.birth_year IN ( 	" \
-                      "SELECT per2.birth_year 	" \
-                      "FROM acts act, surrogate_person sur2, persons per2 	" \
-                      "WHERE mov.tconst = act.tconst " \
-                      "AND act.nconst = sur2.nconst " \
-                      "AND per2.primary_name = sur2.primary_name " \
-                      "AND per2.birth_year = sur2.birth_year)"
+        queryString = "select mov.title " \
+                      "from general_movies mov , generes gen " \
+                      "where mov.tconst = gen.tconst " \
+                      "and gen.genre like '%show%' " \
+                      "and mov.runtime < 10";
         print(queryString)
         conn = mysql.connect()
         cursor = conn.cursor()
@@ -261,11 +246,12 @@ def query_10():
     else:
         length = request.form["length"]
         length = int(length) * 60
-        queryString = "select title, runtime, " \
-                      "count(tvSeries.series_tconst) * runtime from group3_movies.general_movies as gMovies, " \
-                      "group3_movies.tvSeries as tvSeries, group3_movies.has as has " \
-                      "where gMovies.tconst = tvSeries.series_tconst and has.series_tconst = tvSeries.series_tconst " \
-                      "group by (tvSeries.series_tconst) having count(has.episode_tconst) * runtime < {};"
+        queryString = "select mov.title, mov.runtime " \
+                      "from general_movies mov , generes gen " \
+                      "where mov.tconst = gen.tconst " \
+                      "and gen.genre like '%show%'" \
+                      "and mov.runtime < {}";
+
         conn = mysql.connect()
         cursor = conn.cursor()
         cursor.execute(queryString.format(length))
