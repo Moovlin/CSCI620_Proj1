@@ -31,15 +31,15 @@ def query_1():
                       "IS NULL AND per.primary_name " \
                       "LIKE '"+StartsWith+"%' " \
                       "AND sur.nconst " \
-                      "NOT IN( " \
-                      "SELECT act.nconst " \
+                      "NOT IN( SELECT act.nconst " \
                       "FROM movie mov, acts act " \
                       "WHERE mov.movie_tconst = act.tconst " \
-                      "AND mov.release_year = 2014) " \
-                      "AND sur.nconst NOT IN( SELECT par.nconst " \
+                      "AND mov.release_year = "+year+") " \
+                      "AND sur.nconst NOT IN(" \
+                      "SELECT par.nconst " \
                       "FROM participates par, movie mov " \
                       "WHERE mov.movie_tconst = par.tconst " \
-                      "AND mov.release_year = "+year+");"
+                      "AND mov.release_year = "+year+")";
         conn = mysql.connect()
         cursor = conn.cursor()
         cursor.execute(queryString)
@@ -90,15 +90,10 @@ def query_3():
                       "FROM general_movies gen " \
                       "WHERE title LIKE '%"+keyword+"%' " \
                       "AND gen.type = 'movie' " \
-                      "AND gen.tconst IN ( " \
-                      "SELECT tconst FROM participates " \
-                      "WHERE category = 'writer' " \
-                      "AND nconst IN ( SELECT nconst " \
-                      "FROM surrogate_person sur, persons per " \
-                      "WHERE per.primary_name= sur.primary_name " \
-                      "AND per.birth_year = sur.birth_year " \
-                      "AND per.death_year IS NULL) );"
-
+                      "AND gen.tconst IN ( SELECT tconst " \
+                      "FROM writers w, personx per " \
+                      "WHERE per.death_year IS NULL " \
+                      "AND per.nconst = w.nconst );"
         conn = mysql.connect()
         cursor = conn.cursor()
         cursor.execute(queryString)
@@ -109,7 +104,19 @@ def query_3():
 #Ri - 4.List the names of alive producers with the greatest number of long-run movies produced (runtime greater than 120 min).
 @app.route("/query4", methods=['POST', 'GET'])
 def query_4():
-    return render_template('Query_4.html')
+    if request.method == 'GET':
+        return render_template('Query_4.html')
+    else:
+        queryString = "select primary_name , max(runtime) " \
+                      "from producer_movie_person " \
+                      "where runtime > 120 and death_year is null " \
+                      "group by nconst, primary_name;"
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute(queryString)
+        records = cursor.fetchall()
+        headers = ["Runtime"]
+        return render_template("general_table_display.html", result=records, header=headers)
 
 #Aj - 5.List the unique name pairs of actors who have acted together in more than a given number (such as 2) movies and sort them by average movie rating (of those they acted together).
 @app.route("/query5", methods=['POST', 'GET'])
