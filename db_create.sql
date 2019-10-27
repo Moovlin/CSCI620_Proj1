@@ -80,7 +80,8 @@ CREATE TABLE `movie` (
   `movie_tconst` varchar(30) NOT NULL,
   `release_year` int(11) DEFAULT NULL,
   PRIMARY KEY (`movie_tconst`),
-  CONSTRAINT `movie_ibfk_1` FOREIGN KEY (`movie_tconst`) REFERENCES `general_movies` (`tconst`)
+  
+CONSTRAINT `movie_ibfk_1` FOREIGN KEY (`movie_tconst`) REFERENCES `general_movies` (`tconst`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 create table videoGame(
