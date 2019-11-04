@@ -3,15 +3,22 @@ INSERT INTO `general_movies`
 SELECT old.tconst, old.oTitle, CAST(old.isAdult AS signed), old.`title-type`, CAST(old.runtimeMinutes AS signed)
 FROM `title_basics1` old;
 
+ALTER TABLE `general_movies` ADD INDEX type (`type`);
+ALTER TABLE `general_movies` ADD INDEX isAdult (`isAdult`);
 -- persons
 INSERT INTO `persons`
 SELECT old.primaryName, CAST(old.birthYear AS signed), CAST(old.deathYear AS signed)
 FROM `name_basics1` old;
 
+ALTER TABLE `persons` ADD INDEX alive (`death_year`);
+
 -- surrogate
 CREATE TABLE `surrogate_person` AS
 SELECT old.nconst as nconst, old.primaryName as `primary_name`, old.birthYear as `birth_year`
 FROM `name_basics1` old;
+
+ALTER TABLE `proj1`.`surrogate_person` 
+ADD PRIMARY KEY (`nconst`, `primary_name`, `birth_year`);
 
 -- professions
 CREATE TABLE `old_professions` (
@@ -36,6 +43,17 @@ order by a.`primary_name`,a.`birth_year`;
 DROP TABLE `old_professions`;
 
 -- acts
+-- 237s
+create table title_principals1 as
+SELECT distinct *
+FROM `title_principals` old
+WHERE old.category = 'actor' AND old.characters IS NOT NULL
+OR old.category = 'actress' AND old.characters IS NOT NULL
+and exists (
+select * from surrogate_person s where s.nconst = old.nconst)
+and exists (
+select * from general_movies g where g.tconst = old.tconst);
+
 CREATE TABLE `acts1` (
   `tconst` varchar(256) NOT NULL,
   `nconst` varchar(256) NOT NULL,
@@ -43,12 +61,12 @@ CREATE TABLE `acts1` (
   PRIMARY KEY (`tconst`,`nconst`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- 360 sec
+-- 139 sec
 INSERT ignore INTO acts1
 SELECT tconst, nconst, substring(a.characters,3,LENGTH(a.characters)-4)
 FROM `title_principals1` a;
 
--- INSERT ignore INTO acts 2486sec
+-- INSERT ignore INTO acts 1459sec
 create table test_acts as
 select a.`nconst` as nconst,a.`tconst` as tconst,substring_index(substring_index(a.characters,'","',b.`help_topic_id`+1),'","',-1) as characters
 from acts1 a
@@ -56,9 +74,11 @@ join
 mysql.`help_topic` b
 on b.`help_topic_id` < (length(a.characters) - length(replace(a.characters,'","',''))+1)
 order by a.`nconst`, a.`tconst`;
--- 2197sec
+
+-- 92sec
 create table acts as 
 SELECT DISTINCT cast(nconst as char(30)) as nconst, cast(tconst as char(30)) as tconst, cast(characters as char(512)) as characters FROM test_acts WHERE characters is not null;
+-- 89sec
 ALTER TABLE `acts` 
 CHANGE COLUMN `nconst` `nconst` VARCHAR(30) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ,
 CHANGE COLUMN `tconst` `tconst` VARCHAR(30) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ,
@@ -67,9 +87,19 @@ ADD PRIMARY KEY (`nconst`, `tconst`, `characters`);
 
 DROP TABLE acts1;
 DROP TABLE `test_acts`;
+
 -- participates
-ALTER TABLE `proj1`.`title_principals2` 
-RENAME TO  `proj1`.`participates` ;
+create table `title_principals2` as
+SELECT old.tconst,old.nconst,old.category,old.job
+FROM `title_principals` old
+WHERE old.category IS NOT NULL and not old.category = 'actress' and not old.category = 'actor'
+and exists (
+select * from surrogate_person s where s.nconst = old.nconst)
+and exists (
+select * from general_movies g where g.tconst = old.tconst);
+
+ALTER TABLE `title_principals2` 
+RENAME TO  `participates` ;
 
 -- localize
 INSERT ignore INTO localize
@@ -161,6 +191,39 @@ SELECT gen.tconst, t.startYear
 FROM generes gen, title_basics t
 WHERE gen.genre = 'Talk-Show'
 AND gen.tconst = t.tconst;
+
+-- producers
+CREATE TABLE producers as
+SELECT distinct p.tconst, p.nconst, p.job
+FROM participates p
+WHERE p.category = 'producer'
+and exists(select * from surrogate_person sur where p.nconst = sur.nconst)
+and exists(select * from general_movies gen where p.tconst = gen.tconst);
+
+ALTER TABLE `producers` 
+ADD PRIMARY KEY (`nconst`, `tconst`);
+
+-- director
+CREATE TABLE directors as
+SELECT distinct p.tconst, p.nconst, p.job
+FROM participates p
+WHERE p.category = 'director'
+and exists(select * from surrogate_person sur where p.nconst = sur.nconst)
+and exists(select * from general_movies gen where p.tconst = gen.tconst);
+
+ALTER TABLE `directors` 
+ADD PRIMARY KEY (`nconst`, `tconst`);
+
+-- writer
+CREATE TABLE writers as
+SELECT distinct p.tconst, p.nconst, p.job
+FROM participates p
+WHERE p.category = 'writer'
+and exists(select * from surrogate_person sur where p.nconst = sur.nconst)
+and exists(select * from general_movies gen where p.tconst = gen.tconst);
+
+ALTER TABLE `writers` 
+ADD PRIMARY KEY (`nconst`, `tconst`);
 
 -- DROP 
 DROP TABLE `name_basics`;

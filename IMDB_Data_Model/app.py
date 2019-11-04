@@ -4,8 +4,8 @@ from flaskext.mysql import MySQL
 app = Flask(__name__)
 mysql = MySQL()
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'Root@123' # replace **** with your local mysql password.
-app.config['MYSQL_DATABASE_DB'] = 'group3_movies_v1'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'root' # replace **** with your local mysql password.
+app.config['MYSQL_DATABASE_DB'] = 'proj1'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
 
@@ -21,25 +21,19 @@ def query_1():
     if request.method == 'GET':
         return render_template('Query_1.html')
     else:
-        StartsWith = request.form['StartsWith']
+        startsWith = request.form['StartsWith']
         year = request.form['year']
-        queryString = "SELECT per.primary_name " \
-                      "FROM persons per, surrogate_person sur " \
-                      "WHERE per.primary_name= sur.primary_name " \
-                      "AND per.birth_year = sur.birth_year " \
-                      "AND per.death_year " \
-                      "IS NULL AND per.primary_name " \
-                      "LIKE '"+StartsWith+"%' " \
-                      "AND sur.nconst " \
-                      "NOT IN( SELECT act.nconst " \
-                      "FROM movie mov, acts act " \
-                      "WHERE mov.movie_tconst = act.tconst " \
-                      "AND mov.release_year = "+year+") " \
-                      "AND sur.nconst NOT IN(" \
-                      "SELECT par.nconst " \
-                      "FROM participates par, movie mov " \
-                      "WHERE mov.movie_tconst = par.tconst " \
-                      "AND mov.release_year = "+year+")";
+        queryString = "SELECT per.`primary_name` " \
+                        "FROM personx per " \
+                        "WHERE per.`death_year` IS NULL " \
+                        "AND per.`primary_name` LIKE '" + startsWith +"%' " \
+                        "AND NOT EXISTS( " \
+                        "SELECT * " \
+                        "FROM movie_participate par " \
+                        "where par.nconst = per.nconst " \
+                        "AND par.`release_year` = "+ year +") and exists( "\
+                        "select * from acts a " \
+                        "where a.nconst = per.nconst); "
         conn = mysql.connect()
         cursor = conn.cursor()
         cursor.execute(queryString)
@@ -53,25 +47,24 @@ def query_2():
     if request.method == 'GET':
         return render_template('Query_2.html')
     else:
-        StartsWith = request.form['StartsWith']
+        name = request.form['name']
+        number = request.form['number']
         year = request.form['year']
-        queryString = "SELECT per.primary_name " \
-                      "FROM persons per, surrogate_person sur " \
-                      "WHERE per.primary_name= sur.primary_name " \
-                      "AND per.birth_year = sur.birth_year " \
-                      "AND per.death_year " \
+        queryString = "select per.primary_name " \
+                      "FROM personx per " \
+                      "WHERE " \
+                      "per.death_year " \
                       "IS NULL AND per.primary_name " \
-                      "LIKE '" + StartsWith + "%' " \
-                                              "AND sur.nconst " \
-                                              "NOT IN( " \
-                                              "SELECT act.nconst " \
-                                              "FROM movie mov, acts act " \
-                                              "WHERE mov.movie_tconst = act.tconst " \
-                                              "AND mov.release_year = 2014) " \
-                                              "AND sur.nconst NOT IN( SELECT par.nconst " \
-                                              "FROM participates par, movie mov " \
-                                              "WHERE mov.movie_tconst = par.tconst " \
-                                              "AND mov.release_year = " + year + ");"
+                      "LIKE '%" + name + "%' " \
+                                              "AND per.nconst " \
+                                              "IN( " \
+                                              "SELECT pro.nconst " \
+                                              "FROM producers pro, talkshow tak " \
+                                              "WHERE pro.tconst = tak.tconst " \
+                                              "AND tak.show_year = " + year + \
+                                              " group by pro.nconst " \
+                                              " having count(*) > "+ number +");"
+
         conn = mysql.connect()
         cursor = conn.cursor()
         cursor.execute(queryString)
@@ -115,7 +108,7 @@ def query_4():
         cursor = conn.cursor()
         cursor.execute(queryString)
         records = cursor.fetchall()
-        headers = ["Runtime"]
+        headers = ["primary_name","Runtime"]
         return render_template("general_table_display.html", result=records, header=headers)
 
 #Aj - 5.List the unique name pairs of actors who have acted together in more than a given number (such as 2) movies and sort them by average movie rating (of those they acted together).
@@ -126,16 +119,17 @@ def query_5():
     else:
         print("In query5")
         Number_Movies = request.form["Number_Movies"]
-        queryString = "select a1, a2 " \
-                      "from act_act act " \
-                      "group by act.a1, act.a2 " \
-                      "having count(*) > "+Number_Movies+";"
+        queryString = "select distinct a.a1, a.a2, p.rating " \
+                      "from act_act a, previous_rating p " \
+                      "where p.tconst = a.tconst " \
+                      "group by a.a1, a.a2, p.rating " \
+                      "having count(*) > "+Number_Movies+" order by p.rating desc;"
 
         conn = mysql.connect()
         cursor = conn.cursor()
         cursor.execute(queryString.format(Number_Movies))
         records = cursor.fetchall()
-        headers = ["Actor Name 1", "Actor Name 2"]
+        headers = ["Actor Name 1", "Actor Name 2", "Rating"]
         return render_template("general_table_display.html", result=records, header=headers)
 
 
@@ -150,7 +144,7 @@ def query_6():
         running_time = request.form["running_time"]
         queryString = "select gen.title " \
                       "from has h, tvEpisode epi, general_movies gen " \
-                      "where h.episode_tconst = epi.episode_tconst and gen.tconst = h.series_tconst and gen.runtime = {} " \
+                      "where h.episode_tconst = epi.episode_tconst and gen.tconst = h.series_tconst and gen.runtime > {} " \
                       "and exists (select * " \
                       "from previous_rating previous " \
                       "where h.series_tconst = previous.tconst and rating > {}) " \
@@ -180,15 +174,12 @@ def query_7():
         #               "JOIN participates p on (g.tconst = p.movie_tconst) " \
         #               "JOIN localize loc on (loc.tconst = m.movie_tconst) " \
         #               "where loc.lang = '"+language+"' and p.act_name like '"+actor_name+"%';"
-        queryString = "Select g.title, surr.primary_name, loc.lang  " \
-                      "from movie m " \
-                      "LEFT JOIN general_movies g on (g.tconst = m.movie_tconst) " \
-                      "JOIN participates p on (g.tconst = p.tconst) " \
-                      "JOIN surrogate_person surr on (p.nconst = surr.nconst) " \
-                      "JOIN localize loc on (loc.tconst = m.movie_tconst) " \
-                      "where loc.lang = '"+language+"' " \
-                      "and p.category = 'actor' " \
-                      "and surr.primary_name like '"+actor_name+"%';"
+        queryString = "Select distinct lo.local_name, per.primary_name, lo.lang " \
+                        "from general_movies m, personx per, localize lo, acts act   " \
+                        "where act.nconst = per.nconst and lo.tconst = m.tconst and m.tconst = act.tconst " \
+                        "and m.type = 'movie' and lo.lang = '"+ language + "' "\
+                        " and per.primary_name like '%" + actor_name+ "%' limit 0,100;"
+
         print(queryString)
         conn = mysql.connect()
         cursor = conn.cursor()
@@ -203,18 +194,19 @@ def query_8():
     if request.method == 'GET':
         return render_template('Query_8.html')
     else:
-        queryString = "Select m.release_year, g.title, p.act_name, per.death_year " \
-                      "from movie m " \
-                      "LEFT JOIN general_movies g on (g.tconst = m.movie_tconst) " \
-                      "JOIN participates p on (g.tconst = p.movie_tconst) " \
-                      "JOIN persons per on (p.act_name = per.primary_name) " \
-                      "where m.release_year > per.death_year;"
+        queryString = "select distinct per.primary_name " \
+                    "from producers pro, personx per " \
+                    "where pro.nconst = per.nconst " \
+                    "and exists (select * " \
+                    "from movie mov " \
+                    "where pro.tconst = mov.movie_tconst " \
+                    "and mov.release_year > per.death_year);"
         print(queryString)
         conn = mysql.connect()
         cursor = conn.cursor()
         cursor.execute(queryString)
         records = cursor.fetchall()
-        headers = ["Realease Year", "Title", "Actor/Producer Name", "Death Year"]
+        headers = ["Producer Name"]
         return render_template("general_table_display.html", result=records, header=headers)
 
 
@@ -224,11 +216,10 @@ def query_9():
     if request.method == 'GET':
         return render_template('Query_8.html')
     else:
-        queryString = "select mov.title " \
-                      "from general_movies mov , generes gen " \
-                      "where mov.tconst = gen.tconst " \
-                      "and gen.genre like '%show%' " \
-                      "and mov.runtime < 10";
+        queryString = "select distinct gen.title " \
+                        "from dir_act_mov a, general_movies gen " \
+                        "where a.dir_birth = a.act_birth " \
+                        "and gen.tconst = a.tconst and not a.dir_nconst = a.act_nconst;"
         print(queryString)
         conn = mysql.connect()
         cursor = conn.cursor()
@@ -256,7 +247,7 @@ def query_10():
         cursor = conn.cursor()
         cursor.execute(queryString.format(length))
         records = cursor.fetchall()
-        headers = ["Title", "Runtime"]
+        headers = ["Title", "Runtime(Minutes)"]
         return render_template("general_table_display.html", result=records, header=headers)
 
 
