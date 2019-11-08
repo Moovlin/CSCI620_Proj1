@@ -20,3 +20,13 @@ plot(moviedata$vote_average, moviedata$popularity)
 plot(moviedata$vote_average, moviedata$revenue)
 plot(moviedata$vote_average, moviedata$runtime)
 plot(moviedata$vote_average, moviedata$vote_count)
+average_rating <- moviedata$vote_average
+budget <- moviedata$budget
+genres <- moviedata$genres
+original_language <- moviedata$original_language
+popularity <- moviedata$popularity
+revenue <-  moviedata$revenue
+runtime <- moviedata$runtime
+vote_count <- moviedata$vote_count
+pairs(~ average + budget + genres + original_language + popularity + revenue + runtime + vote_count)
+
