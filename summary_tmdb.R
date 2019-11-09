@@ -6,7 +6,7 @@ require(tidyr)
 require(sqldf)
 
 # change file path here
-setwd("~/Downloads/tmdb-movie-metadata")
+setwd("~/Documents/IntroToBigData/Data_Mining/tmdb-movie-metadata")
 
 # tmdb summary 
 tmdb_5000_movies <- read.csv("tmdb_5000_movies.csv")
@@ -31,8 +31,6 @@ revenue <-  moviedata$revenue
 runtime <- moviedata$runtime
 vote_count <- moviedata$vote_count
 pairs(~ average_rating + budget + genres + original_language + popularity + revenue + runtime + vote_count)
-
-
 
 
 library(plyr)             #For Data transformation
@@ -173,3 +171,9 @@ movies %>% select(title,vote_average,vote_count, popularity) %>%
   filter(vote_count > 300 ) %>%  head(30) %>%
   ggplot(aes(x = title,y = popularity, fill = vote_count)) + geom_bar(stat = "identity") + coord_flip() +
   scale_fill_continuous()
+
+ggplot(movies[movies$original_language=='en',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for English language")
+ggplot(movies[movies$original_language=='fr',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for French language")
+ggplot(movies[movies$original_language=='zh',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for Chinese language")
+ggplot(movies[movies$original_language=='es',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for Spanish language")
+ggplot(movies[movies$original_language=='de',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for German language")
