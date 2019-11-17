@@ -6,7 +6,7 @@ require(tidyr)
 require(sqldf)
 
 # change file path here
-setwd("~/Documents/IntroToBigData/Data_Mining/tmdb-movie-metadata")
+setwd("~/Downloads/tmdb-movie-metadata")
 
 # tmdb summary 
 tmdb_5000_movies <- read.csv("tmdb_5000_movies.csv")
@@ -177,3 +177,97 @@ ggplot(movies[movies$original_language=='fr',],aes(x=vote_average))+geom_histogr
 ggplot(movies[movies$original_language=='zh',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for Chinese language")
 ggplot(movies[movies$original_language=='es',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for Spanish language")
 ggplot(movies[movies$original_language=='de',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for German language")
+
+# extract experience feature from data set
+actor_experience<-dplyr::summarise(group_by(all_cast,id,name),experience_count=n())
+producer_experience<-dplyr::summarise(group_by(all_crew,id,name,job),experience_count=n()) %>% filter(job == "Producer" )
+director_experience<-dplyr::summarise(group_by(all_crew,id,name,job),experience_count=n()) %>% filter(job == "Director" )
+
+tmp <- subset(merge(all_cast,actor_experience,by=c("id","name")),
+              select = c(movie_id, title, id, name,experience_count))
+tmp <- tmp[!duplicated(tmp),]
+tmp0<-dplyr::summarise(group_by(tmp,movie_id,title),act_experience_mean=mean(experience_count))
+
+# top 3 stuff
+max2 = function(x){
+  t = which.max(x$experience_count)
+  data = x[-t,]
+  actor_max2= max(data$experience_count)
+  return(data.frame(actor_max2))
+}
+
+max3 = function(x){
+  t = which.max(x$experience_count)
+  data = x[-t,]
+  t = which.max(data$experience_count)
+  data = data[-t,]
+  actor_max3= max(data$experience_count)
+  return(data.frame(actor_max3))
+}
+
+act_greatest1 <- dplyr::summarise(group_by(tmp,movie_id,title),actor_max1=max(experience_count))
+act_greatest2 <- tmp %>% group_by (movie_id,title) %>% do(max2(.))
+act_greatest3 <- tmp %>% group_by (movie_id,title) %>% do(max3(.))
+
+tmp <- subset(merge(all_crew,producer_experience,by=c("id","name")),
+              select = c(movie_id, title, id, name,experience_count))
+tmp <- tmp[!duplicated(tmp),]
+tmp1<-dplyr::summarise(group_by(tmp,movie_id,title),pro_experience_mean=mean(experience_count))
+
+max2 = function(x){
+  t = which.max(x$experience_count)
+  data = x[-t,]
+  producer_max2= max(data$experience_count)
+  return(data.frame(producer_max2))
+}
+
+pro_greatest1 <- dplyr::summarise(group_by(tmp,movie_id,title),producer_max1=max(experience_count))
+pro_greatest2 <- tmp %>% group_by (movie_id,title) %>% do(max2(.))
+
+tmp <- subset(merge(all_crew,director_experience,by=c("id","name")),
+              select = c(movie_id, title, id, name,experience_count))
+tmp <- tmp[!duplicated(tmp),]
+tmp2<-dplyr::summarise(group_by(tmp,movie_id,title),dir_experience_mean=mean(experience_count))
+
+max2 = function(x){
+  t = which.max(x$experience_count)
+  data = x[-t,]
+  director_max2= max(data$experience_count)
+  return(data.frame(director_max2))
+}
+
+dir_greatest1 <- dplyr::summarise(group_by(tmp,movie_id,title),directormax1=max(experience_count))
+dir_greatest2 <- tmp %>% group_by (movie_id,title) %>% do(max2(.))
+
+#merge all the feature and keep missing value as NA
+experience_feature<- merge(tmp2,tmp1,by=c("movie_id","title"), all = TRUE)
+experience_feature<- merge(experience_feature,tmp0,by=c("movie_id","title"), all = TRUE)
+experience_feature<- merge(experience_feature,act_greatest1,by=c("movie_id","title"), all = TRUE)
+experience_feature<- merge(experience_feature,act_greatest2,by=c("movie_id","title"), all = TRUE)
+experience_feature<- merge(experience_feature,act_greatest3,by=c("movie_id","title"), all = TRUE)
+experience_feature<- merge(experience_feature,pro_greatest1,by=c("movie_id","title"), all = TRUE)
+experience_feature<- merge(experience_feature,pro_greatest2,by=c("movie_id","title"), all = TRUE)
+experience_feature<- merge(experience_feature,dir_greatest1,by=c("movie_id","title"), all = TRUE)
+experience_feature<- merge(experience_feature,dir_greatest2,by=c("movie_id","title"), all = TRUE)
+
+experience_feature[experience_feature == -Inf]<- NA
+
+remove(act_greatest1)
+remove(act_greatest2)
+remove(act_greatest3)
+remove(pro_greatest1)
+remove(pro_greatest2)
+remove(dir_greatest1)
+remove(dir_greatest2)
+remove(tmp)
+remove(tmp0)
+remove(tmp1)
+remove(tmp2)
+
+# extract localization feature from data set
+library(stringr)
+tmp <- subset(movies, select = c(id,original_title,spoken_languages))
+tmp <- transform(tmp, language_number= str_count(tmp$spoken_languages,",")+1) 
+localization_feature <- subset(tmp, select = -c(spoken_languages))
+remove(tmp)
+
