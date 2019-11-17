@@ -6,22 +6,22 @@ require(tidyr)
 require(sqldf)
 
 # change file path here
-setwd("~/Downloads/tmdb-movie-metadata")
+setwd("~/Documents/IntroToBigData/Data_Mining/tmdb-movie-metadata")
 
 # tmdb summary 
 tmdb_5000_movies <- read.csv("tmdb_5000_movies.csv")
 moviedata<-tmdb_5000_movies
-
+summary(moviedata)
 Quantitivedata<-sqldf("select budget, homepage, id, original_language, original_title, overview, popularity, production_companies, production_countries, release_date, revenue, runtime, spoken_languages, status, vote_average, vote_count from moviedata")
 Textualdata<-sqldf("select homepage, original_title, overview, tagline from moviedata")
 
-plot(moviedata$vote_average, moviedata$budget)
-plot(moviedata$vote_average, moviedata$genres)
-plot(moviedata$vote_average, moviedata$original_language)
-plot(moviedata$vote_average, moviedata$popularity)
-plot(moviedata$vote_average, moviedata$revenue)
-plot(moviedata$vote_average, moviedata$runtime)
-plot(moviedata$vote_average, moviedata$vote_count)
+#plot(moviedata$vote_average, moviedata$budget)
+#plot(moviedata$vote_average, moviedata$genres)
+#plot(moviedata$vote_average, moviedata$original_language)
+#plot(moviedata$vote_average, moviedata$popularity)
+#plot(moviedata$vote_average, moviedata$revenue)
+#plot(moviedata$vote_average, moviedata$runtime)
+#plot(moviedata$vote_average, moviedata$vote_count)
 average_rating <- moviedata$vote_average
 budget <- moviedata$budget
 genres <- moviedata$genres
@@ -155,12 +155,12 @@ datatable(head(cast, 10))
 datatable(head(crew, 10))
 
 #analysis by average vote
-ggplot(movies,aes(vote_average)) +
-  geom_histogram(bins = 100) +
-  geom_vline(xintercept = mean(movie$vote_average,na.rm = TRUE),colour = "red") + 
-  ylab("Count of Movies") + 
-  xlab("Average Vote") + 
-  ggtitle("Histogram for average vote rating")
+#ggplot(movies,aes(vote_average)) +
+ # geom_histogram(bins = 100) +
+  #geom_vline(xintercept = mean(movie$vote_average,na.rm = TRUE),colour = "red") + 
+  #ylab("Count of Movies") + 
+#  xlab("Average Vote") + 
+ # ggtitle("Histogram for average vote rating")
 
 movies %>% select(title,vote_average,vote_count, budget) %>% 
   filter(vote_count > 500 ) %>% arrange(desc(vote_average)) %>% head(20) %>%
@@ -172,11 +172,14 @@ movies %>% select(title,vote_average,vote_count, popularity) %>%
   ggplot(aes(x = title,y = popularity, fill = vote_count)) + geom_bar(stat = "identity") + coord_flip() +
   scale_fill_continuous()
 
-ggplot(movies[movies$original_language=='en',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for English language")
-ggplot(movies[movies$original_language=='fr',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for French language")
-ggplot(movies[movies$original_language=='zh',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for Chinese language")
-ggplot(movies[movies$original_language=='es',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for Spanish language")
-ggplot(movies[movies$original_language=='de',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for German language")
+#ggplot(movies[movies$original_language=='en',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for English language")
+#ggplot(movies[movies$original_language=='fr',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for French language")
+#ggplot(movies[movies$original_language=='zh',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for Chinese language")
+#ggplot(movies[movies$original_language=='es',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for Spanish language")
+#ggplot(movies[movies$original_language=='de',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for German language")
+
+movies$production_countries
+movies$vote_count
 
 # extract experience feature from data set
 actor_experience<-dplyr::summarise(group_by(all_cast,id,name),experience_count=n())
@@ -250,7 +253,7 @@ experience_feature<- merge(experience_feature,pro_greatest2,by=c("movie_id","tit
 experience_feature<- merge(experience_feature,dir_greatest1,by=c("movie_id","title"), all = TRUE)
 experience_feature<- merge(experience_feature,dir_greatest2,by=c("movie_id","title"), all = TRUE)
 
-experience_feature[experience_feature == -Inf]<- NA
+experience_feature[is.na(experience_feature)]<- 0
 
 remove(act_greatest1)
 remove(act_greatest2)
@@ -270,4 +273,28 @@ tmp <- subset(movies, select = c(id,original_title,spoken_languages))
 tmp <- transform(tmp, language_number= str_count(tmp$spoken_languages,",")+1) 
 localization_feature <- subset(tmp, select = -c(spoken_languages))
 remove(tmp)
+localization_feature
+experience_feature
+
+movie_genre<- merge(movies,genres,by=c("id","title"), all = TRUE)
+movei_loc<- merge(movie_genre,localization_feature,by.x="id",by.y="id", all = TRUE)
+movei_exp<- merge(movei_loc,experience_feature,by.x="id",by.y="movie_id", all = TRUE)
+movies<- subset(movei_exp, !is.na(vote_average))
+movies<- subset(movies, !is.na(language_number))
+movies<- subset(movies, !is.na(dir_experience_mean))
+
+
+library("rpart")
+library("rpart.plot")
+library(party)
+dataPart = movies$vote_average ~ movies$runtime + movies$budget +  movies$popularity + movies$language_number + movies$pro_experience_mean 
+tree = rpart(dataPart, data = movies, method = "class")
+rpart.plot(tree,box.palette = "blue")
+summary(movies)
+control<-ctree_control(maxdepth=4)
+output.tree <- ctree(vote_average ~ runtime + budget + revenue+ popularity + language_number + dir_experience_mean + pro_experience_mean + act_experience_mean, movies)
+
+plot(output.tree)
+
+table(predict(output.tree),movies$vote_average)
 
