@@ -6,7 +6,7 @@ require(tidyr)
 require(sqldf)
 
 # change file path here
-setwd("~/Downloads/tmdb-movie-metadata")
+setwd("~/Documents/IntroToBigData/Data_Mining/tmdb-movie-metadata")
 
 # tmdb summary 
 tmdb_5000_movies <- read.csv("tmdb_5000_movies.csv")
@@ -156,11 +156,11 @@ datatable(head(crew, 10))
 
 #analysis by average vote
 #ggplot(movies,aes(vote_average)) +
- # geom_histogram(bins = 100) +
-  #geom_vline(xintercept = mean(movie$vote_average,na.rm = TRUE),colour = "red") + 
-  #ylab("Count of Movies") + 
+# geom_histogram(bins = 100) +
+#geom_vline(xintercept = mean(movie$vote_average,na.rm = TRUE),colour = "red") + 
+#ylab("Count of Movies") + 
 #  xlab("Average Vote") + 
- # ggtitle("Histogram for average vote rating")
+# ggtitle("Histogram for average vote rating")
 
 movies %>% select(title,vote_average,vote_count, budget) %>% 
   filter(vote_count > 500 ) %>% arrange(desc(vote_average)) %>% head(20) %>%
@@ -273,27 +273,27 @@ localization_feature <- subset(tmp, select = -c(spoken_languages))
 remove(tmp)
 
 
-movie_genre<- merge(movies,genres,by=c("id","title"), all = TRUE)
-movei_loc<- merge(movie_genre,localization_feature,by.x="id",by.y="id", all = TRUE)
-movei_exp<- merge(movei_loc,experience_feature,by.x="id",by.y="movie_id", all = TRUE)
-movies<- subset(movei_exp, !is.na(vote_average))
-movies<- subset(movies, !is.na(language_number))
-movies<- subset(movies, !is.na(dir_experience_mean))
+#movie_genre<- merge(movies,genres,by=c("id","title"), all = TRUE)
+#movei_loc<- merge(movie_genre,localization_feature,by.x="id",by.y="id", all = TRUE)
+#movei_exp<- merge(movei_loc,experience_feature,by.x="id",by.y="movie_id", all = TRUE)
+#movies<- subset(movei_exp, !is.na(vote_average))
+#movies<- subset(movies, !is.na(language_number))
+#movies<- subset(movies, !is.na(dir_experience_mean))
 
 
-library("rpart")
-library("rpart.plot")
-library(party)
-dataPart = movies$vote_average ~ movies$runtime + movies$budget +  movies$popularity + movies$language_number + movies$pro_experience_mean 
-tree = rpart(dataPart, data = movies, method = "class")
-rpart.plot(tree,box.palette = "blue")
-summary(movies)
-control<-ctree_control(maxdepth=4)
-output.tree <- ctree(vote_average ~ runtime + budget + revenue+ popularity + language_number + dir_experience_mean + pro_experience_mean + act_experience_mean, movies)
+#library("rpart")
+#library("rpart.plot")
+#library(party)
+#dataPart = movies$vote_average ~ movies$runtime + movies$budget +  movies$popularity + movies$language_number + movies$pro_experience_mean 
+#tree = rpart(dataPart, data = movies, method = "class")
+#rpart.plot(tree,box.palette = "blue")
+#summary(movies)
+#control<-ctree_control(maxdepth=4)
+#output.tree <- ctree(vote_average ~ runtime + budget + revenue+ popularity + language_number + dir_experience_mean + pro_experience_mean + act_experience_mean, movies)
 
-plot(output.tree)
+#plot(output.tree)
 
-table(predict(output.tree),movies$vote_average)
+#table(predict(output.tree),movies$vote_average)
 
 
 
@@ -358,17 +358,18 @@ for (i in c(1:10)){
 raw_set <- subset(raw_set,select = -c(popularity))
 raw_set$popularity_class <- as.factor(raw_set$popularity_class )
 
-for (i in c(1:nrow(raw_set))){
-  if (raw_set[i,]$vote_average <= 2.5 && raw_set[i,]$vote_average > 0) raw_set[i,]$vote_average <- 1 
-  if (raw_set[i,]$vote_average <= 5 && raw_set[i,]$vote_average > 2.5) raw_set[i,]$vote_average <- 2
-  if (raw_set[i,]$vote_average <= 7.5 && raw_set[i,]$vote_average > 5) raw_set[i,]$vote_average <- 3
-  if (raw_set[i,]$vote_average <= 10 && raw_set[i,]$vote_average > 7.5) raw_set[i,]$vote_average <- 4
-}
-
-for (i in c(1:nrow(raw_set))){
-  if (raw_set[i,]$vote_average <= 5 && raw_set[i,]$vote_average > 0) raw_set[i,]$vote_average <- 1 
-  if (raw_set[i,]$vote_average <= 10 && raw_set[i,]$vote_average > 5) raw_set[i,]$vote_average <- 2
-}
+if(FALSE){  ##################Remove this for 2 classes classification
+  for (i in c(1:nrow(raw_set))){
+    if (raw_set[i,]$vote_average <= 2.5 && raw_set[i,]$vote_average > 0) raw_set[i,]$vote_average <- 1 
+    if (raw_set[i,]$vote_average <= 5 && raw_set[i,]$vote_average > 2.5) raw_set[i,]$vote_average <- 2
+    if (raw_set[i,]$vote_average <= 7.5 && raw_set[i,]$vote_average > 5) raw_set[i,]$vote_average <- 3
+    if (raw_set[i,]$vote_average <= 10 && raw_set[i,]$vote_average > 7.5) raw_set[i,]$vote_average <- 4
+  }
+  
+  for (i in c(1:nrow(raw_set))){
+    if (raw_set[i,]$vote_average <= 5 && raw_set[i,]$vote_average > 0) raw_set[i,]$vote_average <- 1 
+    if (raw_set[i,]$vote_average <= 10 && raw_set[i,]$vote_average > 5) raw_set[i,]$vote_average <- 2
+  }}
 
 require(plyr)
 require(e1071)
@@ -431,4 +432,22 @@ f1_fun = function(pre,y){
 }
 
 f1_fun(actual,prediction)
+
+
+library("rpart")
+library("rpart.plot")
+library(party)
+control<-ctree_control(maxdepth=8)
+output.tree <- ctree(vote_average ~ runtime_class + budget_class + revenue_class + popularity_class + language_number + dir_experience_mean + pro_experience_mean + act_experience_mean, train)
+
+plot(output.tree)
+predicted <- predict((output.tree),validation)
+predicted
+validation$vote_average
+table(predicted,validation$vote_average)
+actual <- validation$vote_average
+
+confusion_matrix <- table(prediction,actual)
+accuracy = sum(confusion_matrix[row(confusion_matrix)==col(confusion_matrix)]) / sum(confusion_matrix)
+accuracy
 
