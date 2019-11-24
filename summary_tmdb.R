@@ -312,7 +312,7 @@ raw_set <- merge(raw_set,label,by=c("id","original_title"))
 raw_set <- subset(raw_set, select = -c(actor_max1,actor_max2,actor_max3,
                                        producer_max1,producer_max2,directormax1,director_max2))
 raw_set <- na.omit(raw_set)
-
+decision_raw_set <- raw_set 
 # 
 library(infotheo)
 runtime <- discretize(raw_set$runtime,"equalfreq",10)
@@ -358,18 +358,23 @@ for (i in c(1:10)){
 raw_set <- subset(raw_set,select = -c(popularity))
 raw_set$popularity_class <- as.factor(raw_set$popularity_class )
 
-if(FALSE){  ##################Remove this for 2 classes classification
-  for (i in c(1:nrow(raw_set))){
-    if (raw_set[i,]$vote_average <= 2.5 && raw_set[i,]$vote_average > 0) raw_set[i,]$vote_average <- 1 
-    if (raw_set[i,]$vote_average <= 5 && raw_set[i,]$vote_average > 2.5) raw_set[i,]$vote_average <- 2
-    if (raw_set[i,]$vote_average <= 7.5 && raw_set[i,]$vote_average > 5) raw_set[i,]$vote_average <- 3
-    if (raw_set[i,]$vote_average <= 10 && raw_set[i,]$vote_average > 7.5) raw_set[i,]$vote_average <- 4
-  }
+#if(FALSE){  ##################Remove this for 2 classes classification
+#  for (i in c(1:nrow(raw_set))){
+#    if (raw_set[i,]$vote_average <= 2.5 && raw_set[i,]$vote_average > 0) raw_set[i,]$vote_average <- 1 
+#    if (raw_set[i,]$vote_average <= 5 && raw_set[i,]$vote_average > 2.5) raw_set[i,]$vote_average <- 2
+#    if (raw_set[i,]$vote_average <= 7.5 && raw_set[i,]$vote_average > 5) raw_set[i,]$vote_average <- 3
+#    if (raw_set[i,]$vote_average <= 10 && raw_set[i,]$vote_average > 7.5) raw_set[i,]$vote_average <- 4
+#  }
   
-  for (i in c(1:nrow(raw_set))){
-    if (raw_set[i,]$vote_average <= 5 && raw_set[i,]$vote_average > 0) raw_set[i,]$vote_average <- 1 
-    if (raw_set[i,]$vote_average <= 10 && raw_set[i,]$vote_average > 5) raw_set[i,]$vote_average <- 2
-  }}
+for (i in c(1:nrow(raw_set))){
+  if (raw_set[i,]$vote_average <= 5 && raw_set[i,]$vote_average >= 0) raw_set[i,]$vote_average <- 1 
+  if (raw_set[i,]$vote_average <= 10 && raw_set[i,]$vote_average > 5) raw_set[i,]$vote_average <- 2
+}
+
+for (i in c(1:nrow(decision_raw_set))){
+  if (decision_raw_set[i,]$vote_average <= 5 && decision_raw_set[i,]$vote_average >= 0) decision_raw_set[i,]$vote_average <- 1 
+  if (decision_raw_set[i,]$vote_average <= 10 && decision_raw_set[i,]$vote_average > 5) decision_raw_set[i,]$vote_average <- 2
+}
 
 require(plyr)
 require(e1071)
@@ -398,8 +403,8 @@ model <- naiveBayes(vote_average~.,data = train)
 prediction <- predict(model,validation)
 actual <- validation$vote_average
 confusion_matrix <- table(prediction,actual)
-accuracy = sum(confusion_matrix[row(confusion_matrix)==col(confusion_matrix)]) / sum(confusion_matrix)
-
+NB_accuracy = sum(confusion_matrix[row(confusion_matrix)==col(confusion_matrix)]) / sum(confusion_matrix)
+NB_accuracy
 f1_fun = function(pre,y){
   class = sort(unique(y))
   tp=NA
@@ -437,8 +442,18 @@ f1_fun(actual,prediction)
 library("rpart")
 library("rpart.plot")
 library(party)
+k <- 10
+datasize <- nrow(decision_raw_set)
+cvlist <- CVgroup(k = k,datasize = datasize,seed = 666)
+validation <- decision_raw_set[cvlist[[1]],]
+validation <- subset(validation,select = -c(id,original_title))
+validation$vote_average <- as.factor(validation$vote_average)
+train <- decision_raw_set[-cvlist[[1]],]
+train <- subset(train,select = -c(id,original_title))
+train$vote_average <- as.factor(train$vote_average)
+
 control<-ctree_control(maxdepth=8)
-output.tree <- ctree(vote_average ~ runtime_class + budget_class + revenue_class + popularity_class + language_number + dir_experience_mean + pro_experience_mean + act_experience_mean, train)
+output.tree <- ctree(vote_average ~ runtime + budget + revenue + popularity + language_number + dir_experience_mean + pro_experience_mean + act_experience_mean, train)
 
 plot(output.tree)
 predicted <- predict((output.tree),validation)
@@ -447,7 +462,6 @@ validation$vote_average
 table(predicted,validation$vote_average)
 actual <- validation$vote_average
 
-confusion_matrix <- table(prediction,actual)
-accuracy = sum(confusion_matrix[row(confusion_matrix)==col(confusion_matrix)]) / sum(confusion_matrix)
-accuracy
-
+confusion_matrix <- table(predicted,actual)
+DT_accuracy = sum(confusion_matrix[row(confusion_matrix)==col(confusion_matrix)]) / sum(confusion_matrix)
+DT_accuracy
