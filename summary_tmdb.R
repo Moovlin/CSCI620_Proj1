@@ -358,7 +358,7 @@ for (i in c(1:10)){
 raw_set <- subset(raw_set,select = -c(popularity))
 raw_set$popularity_class <- as.factor(raw_set$popularity_class )
 
-if(FALSE){  ##################Remove this for 2 classes classification
+#if(FALSE){  ##################Remove this for 2 classes classification
   for (i in c(1:nrow(raw_set))){
     if (raw_set[i,]$vote_average <= 2.5 && raw_set[i,]$vote_average > 0) raw_set[i,]$vote_average <- 1 
     if (raw_set[i,]$vote_average <= 5 && raw_set[i,]$vote_average > 2.5) raw_set[i,]$vote_average <- 2
@@ -369,7 +369,8 @@ if(FALSE){  ##################Remove this for 2 classes classification
   for (i in c(1:nrow(raw_set))){
     if (raw_set[i,]$vote_average <= 5 && raw_set[i,]$vote_average > 0) raw_set[i,]$vote_average <- 1 
     if (raw_set[i,]$vote_average <= 10 && raw_set[i,]$vote_average > 5) raw_set[i,]$vote_average <- 2
-  }}
+  }
+#}
 
 require(plyr)
 require(e1071)
