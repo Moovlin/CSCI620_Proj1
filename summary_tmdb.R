@@ -6,7 +6,7 @@ require(tidyr)
 require(sqldf)
 
 # change file path here
-setwd("~/Documents/IntroToBigData/Data_Mining/tmdb-movie-metadata")
+setwd("~/Downloads/tmdb-movie-metadata")
 
 # tmdb summary 
 tmdb_5000_movies <- read.csv("tmdb_5000_movies.csv")
@@ -178,8 +178,6 @@ movies %>% select(title,vote_average,vote_count, popularity) %>%
 #ggplot(movies[movies$original_language=='es',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for Spanish language")
 #ggplot(movies[movies$original_language=='de',],aes(x=vote_average))+geom_histogram(binwidth=1)+ ggtitle("Ananlysis for German language")
 
-movies$production_countries
-movies$vote_count
 
 # extract experience feature from data set
 actor_experience<-dplyr::summarise(group_by(all_cast,id,name),experience_count=n())
@@ -273,8 +271,7 @@ tmp <- subset(movies, select = c(id,original_title,spoken_languages))
 tmp <- transform(tmp, language_number= str_count(tmp$spoken_languages,",")+1) 
 localization_feature <- subset(tmp, select = -c(spoken_languages))
 remove(tmp)
-localization_feature
-experience_feature
+
 
 movie_genre<- merge(movies,genres,by=c("id","title"), all = TRUE)
 movei_loc<- merge(movie_genre,localization_feature,by.x="id",by.y="id", all = TRUE)
@@ -297,4 +294,141 @@ output.tree <- ctree(vote_average ~ runtime + budget + revenue+ popularity + lan
 plot(output.tree)
 
 table(predict(output.tree),movies$vote_average)
+
+
+
+
+################################################################
+# prepare date set
+label <- subset(movies,select = c(id,original_title,vote_average))
+# set rateing interval
+label$vote_average <- ceiling(label$vote_average)
+raw_set <- subset(movies,select = c(id,original_title,runtime, budget,revenue,popularity))
+names(experience_feature)[2] = "original_title"
+names(experience_feature)[1] = "id"
+raw_set <- merge(raw_set,experience_feature,by=c("id","original_title"))
+raw_set <- merge(raw_set,localization_feature,by=c("id","original_title"))
+raw_set <- merge(raw_set,label,by=c("id","original_title"))
+raw_set <- subset(raw_set, select = -c(actor_max1,actor_max2,actor_max3,
+                                       producer_max1,producer_max2,directormax1,director_max2))
+raw_set <- na.omit(raw_set)
+
+# 
+library(infotheo)
+runtime <- discretize(raw_set$runtime,"equalfreq",10)
+plot(raw_set$runtime, col = runtime$X)
+names(runtime)[1] <- "runtime_class"
+raw_set <- cbind(raw_set,runtime)
+for (i in c(1:10)){
+  print(max(filter(raw_set,runtime_class == i)$runtime))
+}
+raw_set <- subset(raw_set,select = -c(runtime))
+raw_set$runtime_class <- as.factor(raw_set$runtime_class )
+
+budget <- discretize(raw_set$budget,"equalfreq",10)
+plot(raw_set$budget, col = budget$budget_class)
+names(budget)[1] <- "budget_class"
+raw_set <- cbind(raw_set,budget)
+for (i in c(1:10)){
+  print(min(filter(raw_set,budget_class == i)$budget))
+  print(max(filter(raw_set,budget_class == i)$budget))
+}
+raw_set <- subset(raw_set,select = -c(budget))
+raw_set$budget_class <- as.factor(raw_set$budget_class )
+
+revenue <- discretize(raw_set$revenue,"equalfreq",10)
+plot(raw_set$revenue, col = revenue$revenue_class)
+names(revenue)[1] <- "revenue_class"
+raw_set <- cbind(raw_set,revenue)
+for (i in c(1:10)){
+  print(min(filter(raw_set,revenue_class == i)$revenue))
+  print(max(filter(raw_set,revenue_class == i)$revenue))
+}
+raw_set <- subset(raw_set,select = -c(revenue))
+raw_set$revenue_class <- as.factor(raw_set$revenue_class )
+
+popularity <- discretize(raw_set$popularity,"equalfreq",10)
+plot(raw_set$popularity, col = popularity$popularity_class)
+names(popularity)[1] <- "popularity_class"
+raw_set <- cbind(raw_set,popularity)
+for (i in c(1:10)){
+  print(min(filter(raw_set,popularity_class == i)$popularity))
+  print(max(filter(raw_set,popularity_class == i)$popularity))
+}
+raw_set <- subset(raw_set,select = -c(popularity))
+raw_set$popularity_class <- as.factor(raw_set$popularity_class )
+
+for (i in c(1:nrow(raw_set))){
+  if (raw_set[i,]$vote_average <= 2.5 && raw_set[i,]$vote_average > 0) raw_set[i,]$vote_average <- 1 
+  if (raw_set[i,]$vote_average <= 5 && raw_set[i,]$vote_average > 2.5) raw_set[i,]$vote_average <- 2
+  if (raw_set[i,]$vote_average <= 7.5 && raw_set[i,]$vote_average > 5) raw_set[i,]$vote_average <- 3
+  if (raw_set[i,]$vote_average <= 10 && raw_set[i,]$vote_average > 7.5) raw_set[i,]$vote_average <- 4
+}
+
+for (i in c(1:nrow(raw_set))){
+  if (raw_set[i,]$vote_average <= 5 && raw_set[i,]$vote_average > 0) raw_set[i,]$vote_average <- 1 
+  if (raw_set[i,]$vote_average <= 10 && raw_set[i,]$vote_average > 5) raw_set[i,]$vote_average <- 2
+}
+
+require(plyr)
+require(e1071)
+# cross validation
+CVgroup <- function(k,datasize,seed){
+  cvlist <- list()
+  set.seed(seed)
+  n <- rep(1:k,ceiling(datasize/k))[1:datasize]    #split data into k groups
+  temp <- sample(n,datasize)   # 
+  x <- 1:k
+  dataseq <- 1:datasize
+  cvlist <- lapply(x,function(x) dataseq[temp==x])  # generate k order sequence from dataseq
+  return(cvlist)
+}
+
+k <- 10
+datasize <- nrow(raw_set)
+cvlist <- CVgroup(k = k,datasize = datasize,seed = 666)
+validation <- raw_set[cvlist[[1]],]
+validation <- subset(validation,select = -c(id,original_title))
+validation$vote_average <- as.factor(validation$vote_average)
+train <- raw_set[-cvlist[[1]],]
+train <- subset(train,select = -c(id,original_title))
+train$vote_average <- as.factor(train$vote_average)
+model <- naiveBayes(vote_average~.,data = train)
+prediction <- predict(model,validation)
+actual <- validation$vote_average
+confusion_matrix <- table(prediction,actual)
+accuracy = sum(confusion_matrix[row(confusion_matrix)==col(confusion_matrix)]) / sum(confusion_matrix)
+
+f1_fun = function(pre,y){
+  class = sort(unique(y))
+  tp=NA
+  fp=NA
+  fn=NA
+  tn=NA
+  for(i in 1:length(class)){
+    tp[i] = sum(pre==class[i] & y==class[i])
+    tn[i] = sum(pre!=class[i] & y!=class[i])
+    fp[i] = sum(pre==class[i] & y!=class[i])
+    fn[i] = sum(pre!=class[i] & y==class[i])
+  }
+  precision = tp/(tp + fp)
+  recall = tp/(tp + fn)
+  f1 = (2*precision*recall)/(precision+recall)
+  
+  names(f1) = class
+  names(precision) = class
+  names(recall) = class
+  
+  print(table(pre,y))
+  print('-------------precision--------------------')
+  print(precision)
+  print('-------------recall--------------------')
+  print(recall)
+  print('-------------f1--------------------')
+  print(f1)
+  print('--------------mean(f1)-------------------')
+  print(mean(f1))
+}
+
+f1_fun(actual,prediction)
 
